@@ -1,7 +1,11 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from schemas.competence import CompetenceRead
+from schemas.experience import ExperienceRead
+from schemas.formation import FormationRead
 
 
 class CVBase(BaseModel):
@@ -24,3 +28,6 @@ class CVRead(CVBase):
     id: int
     candidat_id: int
     date_depot: datetime
+    competences: List[CompetenceRead] = []
+    experiences: List[ExperienceRead] = []
+    formations: List[FormationRead] = []
