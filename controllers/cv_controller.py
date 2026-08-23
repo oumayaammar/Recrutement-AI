@@ -9,99 +9,261 @@ import schemas
 from services import extraction_service
 
 
-def creer_cv(db: Session, cv_in: schemas.CVCreate) -> models.CV:
+def creer_cv(
+    db: Session,
+    cv_in: schemas.CVCreate
+) -> models.CV:
+    """Créer un CV pour un candidat."""
+
     candidat = db.get(models.Candidat, cv_in.candidat_id)
+
     if not candidat:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidat introuvable.")
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Candidat introuvable."
+        )
 
     cv = models.CV(
         candidat_id=cv_in.candidat_id,
         fichier_url=cv_in.fichier_url,
         texte_brut=cv_in.texte_brut,
     )
+
     db.add(cv)
     db.commit()
     db.refresh(cv)
+
     return cv
 
 
-def obtenir_cv(db: Session, cv_id: int) -> models.CV:
+def obtenir_cv(
+    db: Session,
+    cv_id: int
+) -> models.CV:
+    """Récupérer un CV par son identifiant."""
+
     cv = db.get(models.CV, cv_id)
+
     if not cv:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "CV introuvable.")
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "CV introuvable."
+        )
+
     return cv
 
 
-def lister_cvs_par_candidat(db: Session, candidat_id: int) -> List[models.CV]:
+def lister_cvs_par_candidat(
+    db: Session,
+    candidat_id: int
+) -> List[models.CV]:
+    """Lister les CV d'un candidat."""
+
     return list(
         db.execute(
-            select(models.CV).where(models.CV.candidat_id == candidat_id)
-        ).scalars().all()
+            select(models.CV).where(
+                models.CV.candidat_id == candidat_id
+            )
+        )
+        .scalars()
+        .all()
     )
 
 
-def mettre_a_jour_cv(db: Session, cv_id: int, cv_in: schemas.CVUpdate) -> models.CV:
+def mettre_a_jour_cv(
+    db: Session,
+    cv_id: int,
+    cv_in: schemas.CVUpdate
+) -> models.CV:
+    """Modifier les informations d'un CV."""
+
     cv = obtenir_cv(db, cv_id)
-    for champ, valeur in cv_in.model_dump(exclude_unset=True).items():
+
+    for champ, valeur in cv_in.model_dump(
+        exclude_unset=True
+    ).items():
         setattr(cv, champ, valeur)
+
     db.commit()
     db.refresh(cv)
+
     return cv
 
 
-def supprimer_cv(db: Session, cv_id: int) -> None:
+def supprimer_cv(
+    db: Session,
+    cv_id: int
+) -> None:
+    """Supprimer un CV."""
+
     cv = obtenir_cv(db, cv_id)
+
     db.delete(cv)
     db.commit()
 
 
-def extraire_texte_depuis_fichier(db: Session, cv_id: int, chemin_fichier: str) -> models.CV:
-    """Extrait le texte brut d'un fichier PDF/DOCX local et le sauvegarde sur le CV."""
+def extraire_texte_depuis_fichier(
+    db: Session,
+    cv_id: int,
+    chemin_fichier: str
+) -> models.CV:
+    """
+    Extraire le texte brut d'un fichier PDF/DOCX
+    et le sauvegarder dans le CV.
+    """
+
     cv = obtenir_cv(db, cv_id)
-    cv.texte_brut = extraction_service.extraire_texte_fichier(chemin_fichier)
+
+    try:
+        texte = extraction_service.extraire_texte_fichier(
+            chemin_fichier
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Impossible d'extraire le texte du fichier : {exc}",
+        )
+
+    if not texte.strip():
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Le fichier ne contient aucun texte exploitable.",
+        )
+
+    cv.texte_brut = texte
+
     db.commit()
     db.refresh(cv)
+
     return cv
 
 
-def extraire_cv(db: Session, cv_id: int) -> models.CV:
+def extraire_cv(
+    db: Session,
+    cv_id: int
+) -> models.CV:
     """
-    Lance l'extraction d'entites (competences/experiences/formations) a partir
-    du texte brut deja stocke sur le CV, via l'API Claude, et cree
-    automatiquement les enregistrements correspondants.
+    Pipeline complet d'extraction d'un CV :
+
+    1. Récupérer le CV.
+    2. Récupérer le chemin du fichier.
+    3. Extraire le texte du PDF/DOCX.
+    4. Sauvegarder le texte brut.
+    5. Envoyer le texte au LLM.
+    6. Extraire compétences, expériences et formations.
+    7. Sauvegarder les données dans PostgreSQL.
     """
+
+    # ---------------------------------------------------------
+    # 1. Récupérer le CV
+    # ---------------------------------------------------------
+
     cv = obtenir_cv(db, cv_id)
 
-    if not cv.texte_brut:
+    # ---------------------------------------------------------
+    # 2. Vérifier le fichier
+    # ---------------------------------------------------------
+
+    chemin_fichier = cv.fichier_url
+
+    if not chemin_fichier:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "Aucun texte brut disponible pour ce CV. "
-            "Extrait d'abord le texte du fichier (extraire_texte_depuis_fichier).",
+            "Aucun fichier associé à ce CV.",
         )
 
-    donnees = extraction_service.extraire_entites_llm(cv.texte_brut)
+    # ---------------------------------------------------------
+    # 3. Extraire le texte du PDF/DOCX
+    # ---------------------------------------------------------
+
+    try:
+        texte = extraction_service.extraire_texte_fichier(
+            chemin_fichier
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Impossible d'extraire le texte du fichier : {exc}",
+        )
+
+    # ---------------------------------------------------------
+    # 4. Vérifier le texte
+    # ---------------------------------------------------------
+
+    if not texte or not texte.strip():
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Le fichier ne contient aucun texte exploitable.",
+        )
+
+    # ---------------------------------------------------------
+    # 5. Sauvegarder le texte brut
+    # ---------------------------------------------------------
+
+    cv.texte_brut = texte
+
+    db.commit()
+    db.refresh(cv)
+
+    # ---------------------------------------------------------
+    # 6. Envoyer le texte au LLM
+    # ---------------------------------------------------------
+
+    try:
+        donnees = extraction_service.extraire_entites_llm(
+            texte
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            f"Erreur lors de l'analyse du CV par le LLM : {exc}",
+        )
+
+    # ---------------------------------------------------------
+    # 7. Enregistrer les compétences
+    # ---------------------------------------------------------
 
     for comp in donnees.get("competences") or []:
+
+        nom = comp.get("nom")
+
+        if not nom:
+            continue
+
         db.add(
             models.Competence(
                 cv_id=cv.id,
-                nom=comp.get("nom"),
+                nom=nom,
                 niveau=comp.get("niveau"),
             )
         )
 
+    # ---------------------------------------------------------
+    # 8. Enregistrer les expériences
+    # ---------------------------------------------------------
+
     for exp in donnees.get("experiences") or []:
+
         db.add(
             models.Experience(
                 cv_id=cv.id,
                 poste=exp.get("poste"),
                 entreprise=exp.get("entreprise"),
-                date_debut=extraction_service.parser_date(exp.get("date_debut")),
-                date_fin=extraction_service.parser_date(exp.get("date_fin")),
+                date_debut=extraction_service.parser_date(
+                    exp.get("date_debut")
+                ),
+                date_fin=extraction_service.parser_date(
+                    exp.get("date_fin")
+                ),
             )
         )
 
+    # ---------------------------------------------------------
+    # 9. Enregistrer les formations
+    # ---------------------------------------------------------
+
     for form in donnees.get("formations") or []:
+
         db.add(
             models.Formation(
                 cv_id=cv.id,
@@ -111,6 +273,11 @@ def extraire_cv(db: Session, cv_id: int) -> models.CV:
             )
         )
 
+    # ---------------------------------------------------------
+    # 10. Sauvegarder toutes les données
+    # ---------------------------------------------------------
+
     db.commit()
     db.refresh(cv)
+
     return cv
