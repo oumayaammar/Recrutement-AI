@@ -38,6 +38,12 @@ def mettre_a_jour_statut_candidature(
     return ctrl.mettre_a_jour_statut_candidature(db, candidature_id, candidature)
 
 
+@router.post("/{candidature_id}/calculer-score", response_model=schemas.CandidatureRead)
+def calculer_score_matching(candidature_id: int, db: Session = Depends(get_db)):
+    """Calcule le score de matching entre le CV du candidat et l'offre visee."""
+    return ctrl.calculer_score_matching(db, candidature_id)
+ 
+
 @router.delete("/{candidature_id}", status_code=status.HTTP_204_NO_CONTENT)
 def supprimer_candidature(candidature_id: int, db: Session = Depends(get_db)):
     ctrl.supprimer_candidature(db, candidature_id)

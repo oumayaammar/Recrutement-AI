@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from db import get_db
 import models
+from controllers import embedding_controller
+from controllers import candidature_controller
 import schemas
 from controllers import offre_controller as ctrl
 
@@ -35,6 +37,18 @@ def obtenir_offre(offre_id: int, db: Session = Depends(get_db)):
 def mettre_a_jour_offre(offre_id: int, offre: schemas.OffreUpdate, db: Session = Depends(get_db)):
     return ctrl.mettre_a_jour_offre(db, offre_id, offre)
 
+
+@router.post("/{offre_id}/embedding", response_model=schemas.EmbeddingRead)
+def generer_embedding_offre(offre_id: int, db: Session = Depends(get_db)):
+    """Genere (ou regenere) l'embedding de l'offre a partir de son titre + description."""
+    return embedding_controller.generer_embedding_offre(db, offre_id)
+ 
+ 
+@router.get("/{offre_id}/classement", response_model=List[schemas.CandidatureRead])
+def classer_candidatures(offre_id: int, db: Session = Depends(get_db)):
+    """Classe les candidatures de l'offre par score de matching decroissant."""
+    return candidature_controller.classer_candidatures_pour_offre(db, offre_id)
+ 
 
 @router.delete("/{offre_id}", status_code=status.HTTP_204_NO_CONTENT)
 def supprimer_offre(offre_id: int, db: Session = Depends(get_db)):

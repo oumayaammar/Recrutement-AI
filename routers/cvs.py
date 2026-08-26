@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from db import get_db
+from controllers import embedding_controller
 import schemas
 from controllers import cv_controller as ctrl
 
@@ -35,6 +36,12 @@ def extraire_cv(cv_id: int, db: Session = Depends(get_db)):
     """Lance l'extraction IA des competences/experiences/formations depuis le texte du CV."""
     return ctrl.extraire_cv(db, cv_id)
 
+
+@router.post("/{cv_id}/embedding", response_model=schemas.EmbeddingRead)
+def generer_embedding_cv(cv_id: int, db: Session = Depends(get_db)):
+    """Genere (ou regenere) l'embedding du CV a partir de son texte + entites extraites."""
+    return embedding_controller.generer_embedding_cv(db, cv_id)
+ 
 
 @router.delete("/{cv_id}", status_code=status.HTTP_204_NO_CONTENT)
 def supprimer_cv(cv_id: int, db: Session = Depends(get_db)):

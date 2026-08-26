@@ -3,8 +3,7 @@ Service d'embeddings et de matching CV/Offre.
 
 - Embeddings generes localement avec sentence-transformers (gratuit, hors-ligne).
   Modele multilingue (FR/EN/AR): paraphrase-multilingual-MiniLM-L12-v2.
-  NOTE: Groq n'expose pas d'API d'embeddings fiable en production (verifie sur
-  console.groq.com/docs/models) - uniquement du texte-generation. D'ou ce choix.
+  
 
 - Le score de matching est une similarite cosinus entre l'embedding du CV et
   celui de l'offre, ramenee sur une echelle 0-100 pour rester lisible cote API.
@@ -46,5 +45,6 @@ def similarite_cosinus(vecteur_a: List[float], vecteur_b: List[float]) -> float:
 def score_matching_pourcentage(vecteur_cv: List[float], vecteur_offre: List[float]) -> float:
     """Convertit la similarite cosinus (-1..1) en score pourcentage (0..100)."""
     similarite = similarite_cosinus(vecteur_cv, vecteur_offre)
-    score = (similarite + 1) / 2 * 100
+    # score = (similarite + 1) / 2 * 100 
+    score = max(0.0, similarite) * 100
     return round(score, 2)

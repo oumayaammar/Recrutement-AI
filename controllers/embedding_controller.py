@@ -2,7 +2,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 import models
-from services import embedding_service 
+from services import embedding_service
+
 
 
 def _texte_cv_pour_embedding(cv: models.CV) -> str:
