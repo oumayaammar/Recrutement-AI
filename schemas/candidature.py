@@ -17,7 +17,7 @@ class CandidatureCreate(CandidatureBase):
 
 class CandidatureUpdate(BaseModel):
     statut: Optional[StatutCandidature] = None
-    score_matching: Optional[float] = Field(None, ge=0, le=1)
+    score_matching: Optional[float] = Field(None, ge=0, le=100)
 
 
 class CandidatureRead(CandidatureBase):

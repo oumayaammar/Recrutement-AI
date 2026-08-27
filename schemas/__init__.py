@@ -15,6 +15,9 @@ from .embedding import EmbeddingBase, EmbeddingCreate, EmbeddingRead
 from .candidature import CandidatureBase, CandidatureCreate, CandidatureUpdate, CandidatureRead
 from .notification import NotificationBase, NotificationCreate, NotificationUpdate, NotificationRead
 
+from .recherche import ResultatRecherche
+from .pipeline import EtapePipeline, PipelineOffre
+
 __all__ = [
     "RoleUtilisateur",
     "StatutOffre",
@@ -65,4 +68,7 @@ __all__ = [
     "NotificationCreate",
     "NotificationUpdate",
     "NotificationRead",
+    "ResultatRecherche",
+    "EtapePipeline",
+    "PipelineOffre",
 ]

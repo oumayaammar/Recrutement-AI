@@ -1,14 +1,3 @@
-"""
-Service d'embeddings et de matching CV/Offre.
-
-- Embeddings generes localement avec sentence-transformers (gratuit, hors-ligne).
-  Modele multilingue (FR/EN/AR): paraphrase-multilingual-MiniLM-L12-v2.
-  
-
-- Le score de matching est une similarite cosinus entre l'embedding du CV et
-  celui de l'offre, ramenee sur une echelle 0-100 pour rester lisible cote API.
-"""
-
 from __future__ import annotations
 
 from functools import lru_cache
@@ -22,8 +11,7 @@ MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 
 @lru_cache(maxsize=1)
 def _get_model() -> SentenceTransformer:
-    # Charge le modele une seule fois par processus (premier appel plus lent:
-    # telechargement ~470 Mo puis mise en cache disque local).
+    
     return SentenceTransformer(MODEL_NAME)
 
 

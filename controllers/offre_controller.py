@@ -58,3 +58,30 @@ def supprimer_offre(db: Session, offre_id: int) -> None:
     offre = obtenir_offre(db, offre_id)
     db.delete(offre)
     db.commit()
+
+
+def obtenir_pipeline(db: Session, offre_id: int) -> dict:
+    """
+    Regroupe les candidatures d'une offre par statut, dans l'ordre du pipeline
+    (Suggeree -> Recue -> Preselectionnee -> Entretien -> Acceptee/Refusee).
+    Utile pour un affichage kanban cote recruteur.
+    """
+    offre = obtenir_offre(db, offre_id)
+ 
+    candidatures = list(
+        db.execute(
+            select(models.Candidature).where(models.Candidature.offre_id == offre.id)
+        ).scalars().all()
+    )
+ 
+    groupes: dict = {statut: [] for statut in models.StatutCandidature}
+    for candidature in candidatures:
+        groupes[candidature.statut].append(candidature)
+ 
+    return {
+        "offre_id": offre.id,
+        "etapes": [
+            {"statut": statut, "candidatures": groupes[statut]}
+            for statut in models.StatutCandidature
+        ],
+    }

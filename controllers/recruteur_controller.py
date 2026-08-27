@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 from security import hash_password
-
+from services import embedding_service
+from typing import List, Tuple
 
 def creer_recruteur(db: Session, recruteur_in: schemas.RecruteurCreate) -> models.Recruteur:
     existant = db.execute(
@@ -62,3 +63,34 @@ def supprimer_recruteur(db: Session, recruteur_id: int) -> None:
     recruteur = obtenir_recruteur(db, recruteur_id)
     db.delete(recruteur)
     db.commit()
+
+def rechercher_candidats(
+    db: Session, requete: str, limite: int = 10
+) -> List[Tuple[models.CV, float]]:
+    """
+    Recherche semantique: transforme la requete en langage naturel du recruteur
+    en embedding, puis la compare a l'embedding de chaque CV deja indexe.
+    Retourne les CVs les plus pertinents, du meilleur score au moins bon.
+    """
+    if not requete or not requete.strip():
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "La requete de recherche ne peut pas etre vide."
+        )
+ 
+    vecteur_requete = embedding_service.generer_embedding(requete)
+ 
+    cvs_indexes = list(
+        db.execute(
+            select(models.CV).join(
+                models.Embedding, models.Embedding.cv_id == models.CV.id
+            )
+        ).scalars().all()
+    )
+ 
+    resultats = [
+        (cv, embedding_service.score_matching_pourcentage(vecteur_requete, cv.embedding.vecteur))
+        for cv in cvs_indexes
+        if cv.embedding is not None
+    ]
+    resultats.sort(key=lambda paire: paire[1], reverse=True)
+    return resultats[:limite]

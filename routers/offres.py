@@ -48,7 +48,12 @@ def generer_embedding_offre(offre_id: int, db: Session = Depends(get_db)):
 def classer_candidatures(offre_id: int, db: Session = Depends(get_db)):
     """Classe les candidatures de l'offre par score de matching decroissant."""
     return candidature_controller.classer_candidatures_pour_offre(db, offre_id)
- 
+
+@router.get("/{offre_id}/pipeline", response_model=schemas.PipelineOffre)
+def obtenir_pipeline(offre_id: int, db: Session = Depends(get_db)):
+    """Vue kanban: candidatures de l'offre groupees par etape du pipeline."""
+    return ctrl.obtenir_pipeline(db, offre_id)
+
 
 @router.delete("/{offre_id}", status_code=status.HTTP_204_NO_CONTENT)
 def supprimer_offre(offre_id: int, db: Session = Depends(get_db)):

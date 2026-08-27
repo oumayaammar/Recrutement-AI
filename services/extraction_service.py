@@ -1,15 +1,3 @@
-"""
-Service d'extraction de CV.
-
-- Extraction du texte brut: pdfplumber (PDF) / python-docx (DOCX).
-  Fonctionne uniquement sur des documents numeriques (texte selectionnable),
-  PAS sur des CVs scannes/images (pas d'OCR ici, volontairement).
-
-- Extraction d'entites structurees: appel a l'API Groq (gratuite), qui sert
-  des modeles open-source (Llama 3.3) avec une inference tres rapide.
-  Plus precis et plus robuste au multilingue (FR/EN/AR) qu'un NER classique
-  type spaCy pour ce cas d'usage, et gratuit (cle sur console.groq.com).
-"""
 
 from __future__ import annotations
 
