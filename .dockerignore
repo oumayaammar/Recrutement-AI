@@ -1,0 +1,8 @@
+﻿__pycache__/
+*.pyc
+env/
+.venv/
+.git/
+.env
+test.db
+node_modules/

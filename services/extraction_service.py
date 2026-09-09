@@ -16,6 +16,7 @@ load_dotenv()
 
 GROQ_MODEL = "qwen/qwen3.6-27b"
 
+
 _client: Optional[Groq] = None
 
 

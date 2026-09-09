@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from db import get_db
@@ -15,6 +15,21 @@ router = APIRouter(prefix="/cvs", tags=["CVs"])
 def creer_cv(cv: schemas.CVCreate, db: Session = Depends(get_db)):
     return ctrl.creer_cv(db, cv)
 
+@router.post(
+    "/upload",
+    response_model=schemas.CVRead,
+    status_code=status.HTTP_201_CREATED
+)
+async def upload_cv(
+    file: UploadFile = File(...),
+    candidat_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    return await ctrl.upload_cv(
+        db=db,
+        file=file,
+        candidat_id=candidat_id
+    )
 
 @router.get("/{cv_id}", response_model=schemas.CVRead)
 def obtenir_cv(cv_id: int, db: Session = Depends(get_db)):

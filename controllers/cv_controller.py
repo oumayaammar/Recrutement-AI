@@ -1,6 +1,7 @@
 from typing import List
-
-from fastapi import HTTPException, status
+from pathlib import Path
+import uuid
+from fastapi import HTTPException, status ,UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +9,8 @@ import models
 import schemas
 from services import extraction_service
 
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 def creer_cv(
     db: Session,
@@ -27,6 +30,72 @@ def creer_cv(
         candidat_id=cv_in.candidat_id,
         fichier_url=cv_in.fichier_url,
         texte_brut=cv_in.texte_brut,
+    )
+
+    db.add(cv)
+    db.commit()
+    db.refresh(cv)
+
+    return cv
+
+async def upload_cv(
+    db: Session,
+    file: UploadFile,
+    candidat_id: int
+) -> models.CV:
+
+    # Vérifier candidat
+    candidat = db.get(models.Candidat, candidat_id)
+
+    if not candidat:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Candidat introuvable."
+        )
+
+    # Vérifier extension
+    if not file.filename:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Nom de fichier invalide."
+        )
+
+    extension = Path(file.filename).suffix.lower()
+
+    if extension not in [".pdf", ".docx"]:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Format non supporté. Utilisez PDF ou DOCX."
+        )
+
+    # Générer nom unique
+    filename = f"{uuid.uuid4()}{extension}"
+
+    filepath = UPLOAD_DIR / filename
+
+    # Sauvegarder fichier
+    content = await file.read()
+
+    if not content:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Le fichier est vide."
+        )
+
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Fichier trop volumineux. Maximum 10 Mo."
+        )
+
+    with open(filepath, "wb") as buffer:
+        buffer.write(content)
+
+    # Créer CV
+    cv = models.CV(
+        candidat_id=candidat_id,
+        fichier_url=str(filepath),
+        texte_brut=None
     )
 
     db.add(cv)
