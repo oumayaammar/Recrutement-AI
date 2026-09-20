@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #475569;
+  --accent: #7C3AED;
+  --accent-foreground: #FFFFFF;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #2563EB;
+  --radius: 0.5rem;
+  --font-sans: var(--font-plus-jakarta-sans), sans-serif;
+
+  --status-publiee-bg: #DCFCE7;
+  --status-publiee-text: #166534;
+  --status-brouillon-bg: #FEF9C3;
+  --status-brouillon-text: #854D0E;
+  --status-cloturee-bg: #FEE2E2;
+  --status-cloturee-text: #991B1B;
+  --status-archivee-bg: #F1F5F9;
+  --status-archivee-text: #475569;
+
+  --candidature-suggeree-bg: #EDE9FE;
+  --candidature-suggeree-text: #5B21B6;
+  --candidature-recue-bg: #DBEAFE;
+  --candidature-recue-text: #1E40AF;
+  --candidature-preselectionnee-bg: #FEF9C3;
+  --candidature-preselectionnee-text: #854D0E;
+  --candidature-entretien-bg: #FED7AA;
+  --candidature-entretien-text: #9A3412;
+  --candidature-acceptee-bg: #DCFCE7;
+  --candidature-acceptee-text: #166534;
+  --candidature-refusee-bg: #FEE2E2;
+  --candidature-refusee-text: #991B1B;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  h1, h2, h3, h4, h5, h6, p {
+    margin: 0;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  .score-bar-fill {
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-transition {
+    transition: width 300ms ease;
+  }
+  .fade-in {
+    animation: fadeIn 0.2s ease-in-out;
+  }
+  .slide-up {
+    animation: slideUp 0.2s ease-out;
+  }
+  .modal-enter {
+    animation: modalEnter 0.15s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes modalEnter {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .kanban-col {
+    min-height: 400px;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
