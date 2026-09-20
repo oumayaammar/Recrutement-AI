@@ -157,7 +157,6 @@ Documentation complète et interactive disponible sur `/docs` une fois le serveu
 
 ## Roadmap
 
-- [ ] Authentification JWT (remplace l'identification manuelle par ID recruteur)
 - [ ] Endpoint d'upload de fichier CV (PDF/DOCX → extraction automatique du texte)
 - [ ] Génération automatique des embeddings à la création d'un CV/d'une offre
 - [ ] Filtrage `recruteur_id` côté backend pour "Mes offres" (actuellement filtré côté frontend)
