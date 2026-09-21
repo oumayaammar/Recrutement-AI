@@ -1,30 +1,28 @@
-FROM python:3.12-slim
-
+# --- Etape 1: dependances ---
+FROM node:20-slim AS deps
 WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-
-# IMPORTANT: installe torch en version CPU-only AVANT le reste.
-# Sans ca, sentence-transformers tire la version GPU de torch par defaut,
-# ce qui telecharge plusieurs Go de librairies CUDA/NVIDIA totalement
-# inutiles ici (pas de GPU dans ce conteneur).
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Precharge le modele d'embeddings au build (evite un telechargement lent
-# et une dependance reseau au premier appel /embedding en production).
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
-
+# --- Etape 2: build ---
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Injecte l'URL de l'API au moment du build (necessaire car NEXT_PUBLIC_*
+# est integre dans le bundle JS envoye au navigateur, pas lu au runtime)
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN npm run build
 
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# --- Etape 3: image finale, legere ---
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
 
-EXPOSE 8000
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+EXPOSE 3000
+CMD ["node", "server.js"]
