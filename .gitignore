@@ -38,3 +38,9 @@ turbo/
 
 __pycache__/
 *.pyc
+.env
+.env.local
+node_modules/
+.next/
+__pycache__/
+*.pyc
