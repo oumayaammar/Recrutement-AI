@@ -25,7 +25,6 @@ class UtilisateurUpdate(BaseModel):
 
 class UtilisateurRead(UtilisateurBase):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
     role: RoleUtilisateur
     date_creation: datetime

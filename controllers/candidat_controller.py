@@ -54,6 +54,7 @@ def mettre_a_jour_candidat(
     candidat = obtenir_candidat(db, candidat_id)
     for champ, valeur in candidat_in.model_dump(exclude_unset=True).items():
         setattr(candidat, champ, valeur)
+        #candidat.email = candidat@gmail.com
     db.commit()
     db.refresh(candidat)
     return candidat

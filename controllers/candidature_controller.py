@@ -85,7 +85,6 @@ def calculer_score_matching(db: Session, candidature_id: int) -> models.Candidat
     l'offre visee, a partir de leurs embeddings deja generes.
     """
     candidature = obtenir_candidature(db, candidature_id)
- 
     cv = (
         db.execute(
             select(models.CV)
